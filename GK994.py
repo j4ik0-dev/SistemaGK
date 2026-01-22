@@ -15,7 +15,6 @@ class BatteryMonitorApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # Configuración de la Ventana
         self.title("Xtrike Monitor")
         self.geometry(APP_SIZE)
         self.resizable(False, False)
@@ -24,30 +23,24 @@ class BatteryMonitorApp(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure((0, 1, 2, 3), weight=1)
 
-        # 1. Título
         self.lbl_title = ctk.CTkLabel(self, text="Xtrike Me GK-994W", font=("Roboto Medium", 16))
         self.lbl_title.grid(row=0, column=0, padx=20, pady=(20, 5), sticky="ew")
 
-        # 2. Porcentaje Grande
         self.lbl_percent = ctk.CTkLabel(self, text="--%", font=("Roboto", 40, "bold"), text_color="#3B8ED0")
         self.lbl_percent.grid(row=1, column=0, padx=20, pady=5)
 
-        # 3. Barra de Progreso
         self.progress_bar = ctk.CTkProgressBar(self, width=200, height=15)
         self.progress_bar.grid(row=2, column=0, padx=20, pady=10)
-        self.progress_bar.set(0) # Iniciar en 0
+        self.progress_bar.set(0)
 
-        # 4. Estado (Texto pequeño)
         self.lbl_status = ctk.CTkLabel(self, text="Buscando dispositivo...", font=("Roboto", 12), text_color="gray")
         self.lbl_status.grid(row=3, column=0, padx=20, pady=(0, 20))
 
-        # Iniciar el hilo de actualización
         self.running = True
         self.monitor_thread = threading.Thread(target=self.loop_check_battery, daemon=True)
         self.monitor_thread.start()
 
     def get_battery_powershell(self):
-        # El comando mágico de PowerShell que extrae la batería vía WinRT
         ps_command = """
         Get-PnpDevice -Class 'Bluetooth' | ForEach-Object {
             $dev = $_
@@ -58,7 +51,6 @@ class BatteryMonitorApp(ctk.CTk):
         } | ConvertTo-Json
         """
         try:
-            # startupinfo para ocultar la ventana de consola negra momentánea
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             
@@ -67,13 +59,11 @@ class BatteryMonitorApp(ctk.CTk):
                 text=True, 
                 startupinfo=startupinfo
             )
-            
             if not result or result.strip() == "": return []
             data = json.loads(result)
             return [data] if isinstance(data, dict) else data
         except Exception:
             return []
-
     def loop_check_battery(self):
         while self.running:
             devices = self.get_battery_powershell()
@@ -94,7 +84,6 @@ class BatteryMonitorApp(ctk.CTk):
             time.sleep(REFRESH_RATE)
 
     def update_ui(self, level, connected):
-        # Actualizamos la UI de forma segura (CustomTkinter es thread-safe en .set, pero mejor asegurar)
         if connected:
             self.lbl_percent.configure(text=f"{level}%", text_color="#3B8ED0" if level > 20 else "#E53935")
             self.progress_bar.set(level / 100)
